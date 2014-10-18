@@ -6,6 +6,7 @@ import numpy as np
 import urllib
 import time
 import sys
+import os
 
 import tornado.escape
 import tornado.ioloop
@@ -96,29 +97,26 @@ class PositionHandler(tornado.web.RequestHandler):
     self.finish()
 
 if __name__ == "__main__":
+    static_path = os.path.join('./', 'static')
     manager = Manager()
     x = manager.Value('f', 0)
     y = manager.Value('f', 0)
     process = DetectorProcess(x, y)
-    application1 = tornado.web.Application([
-        # (r"/stream", StreamHandler, dict(x=x, y=y)),
-        (r"/position", PositionHandler, dict(x=x, y=y))
-    ])
+    handlers = [
+      (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': static_path}),
+      (r'/', tornado.web.RedirectHandler,
+        dict(url="/static/index.html"),
+      ),
+      # (r"/stream", StreamHandler, dict(x=x, y=y)),
+      (r"/position", PositionHandler, dict(x=x, y=y))
+    ]
+    application1 = tornado.web.Application(handlers)
     application1.listen(8000, address='127.0.0.1')
-    application2 = tornado.web.Application([
-        # (r"/stream", StreamHandler, dict(x=x, y=y)),
-        (r"/position", PositionHandler, dict(x=x, y=y))
-    ])
+    application2 = tornado.web.Application(handlers)
     application2.listen(8001, address='127.0.0.1')
-    application3 = tornado.web.Application([
-        # (r"/stream", StreamHandler, dict(x=x, y=y)),
-        (r"/position", PositionHandler, dict(x=x, y=y))
-    ])
+    application3 = tornado.web.Application(handlers)
     application3.listen(8002, address='127.0.0.1')
-    application4 = tornado.web.Application([
-        # (r"/stream", StreamHandler, dict(x=x, y=y)),
-        (r"/position", PositionHandler, dict(x=x, y=y))
-    ])
+    application4 = tornado.web.Application(handlers)
     application4.listen(8003, address='127.0.0.1')
     process.start()
     tornado.ioloop.IOLoop.instance().start()
