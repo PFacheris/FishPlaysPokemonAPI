@@ -1,0 +1,34 @@
+body{
+	font-family:'Open Sans', sans-serif;
+	margin:0px;
+}
+
+h1, h2, h3{
+	font-family: 'Dosis', sans-serif;
+}
+
+.header-bar{
+	background:#efefef;
+}
+
+.page-content, .header-content{
+	width:75%;
+	margin:auto;
+}
+
+.endpoint-content{
+	margin-left:30px;
+}
+
+.codesnippet{
+	font-family: 'Inconsolata', sans-serif;
+	margin:30px;
+	padding:10px;
+	background-color:#efefef; 
+	border-radius: 5px;
+}
+
+.footer{
+	color:#eee;
+	margin-top:30px;
+}
