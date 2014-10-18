@@ -5,19 +5,22 @@ import math
 import numpy as np
 import urllib
 import time
+import sys
 
 import tornado.escape
 import tornado.ioloop
 import tornado.web
 from tornado import gen
+from tornado.escape import json_encode
 from multiprocessing import Process, Pipe, Manager
 
 def get_percentage_from_pixels(dim, type="width"):
   if type == "width":
-    return 100 * (dim / config.CONTROLLER.WIDTH)
-  if type == "height"
-    return 100 * (dim / config.CONTROLLER.HEIGHT)
-  else
+    return str(100 * (dim / config.CONTROLLER.WIDTH))
+  if type == "height":
+    print dim
+    return str(100 * (dim / config.CONTROLLER.HEIGHT))
+  else:
     return None
 
 class DetectorProcess(Process):
@@ -62,7 +65,7 @@ class DetectorProcess(Process):
             largestContour = contourAreas[maxarea]
             ccenter, cradius = cv2.minEnclosingCircle(largestContour)
             self.x.value = ccenter[0]
-            self.y.value = ccenter[0]
+            self.y.value = ccenter[1]
 
 class StreamHandler(tornado.web.RequestHandler):
   def initialize(self, x, y):
@@ -73,7 +76,7 @@ class StreamHandler(tornado.web.RequestHandler):
   def get(self):
     while True:
       gen.Task(tornado.ioloop.IOLoop.instance().add_timeout, time.time() + 1)
-      self.write(get_percentage_from_pixels(self.x, type="width") + ", " + get_percentage_from_pixels(self.y, type="height") + "\r\n")
+      self.write(get_percentage_from_pixels(self.x.value, type="width") + ", " + get_percentage_from_pixels(self.y.value, type="height") + "\r\n")
       self.flush()
     self.finish()
 
@@ -84,7 +87,12 @@ class PositionHandler(tornado.web.RequestHandler):
 
   @tornado.web.asynchronous
   def get(self):
-    self.write(get_percentage_from_pixels(self.x, type="width") + ", " + get_percentage_from_pixels(self.y, type="height") + "\r\n")
+    response = {
+        "x": get_percentage_from_pixels(self.x.value, type="width"),
+        "y": get_percentage_from_pixels(self.y.value, type="height")
+    }
+    self.write(json_encode(response))
+    self.set_header("Content-Type", "application/json")
     self.finish()
 
 if __name__ == "__main__":
@@ -92,10 +100,25 @@ if __name__ == "__main__":
     x = manager.Value('f', 0)
     y = manager.Value('f', 0)
     process = DetectorProcess(x, y)
-    application = tornado.web.Application([
+    application1 = tornado.web.Application([
         # (r"/stream", StreamHandler, dict(x=x, y=y)),
-        (r"/", PositionHandler, dict(x=x, y=y))
+        (r"/position", PositionHandler, dict(x=x, y=y))
     ])
-    application.listen(8888)
+    application1.listen(8000, address='127.0.0.1')
+    application2 = tornado.web.Application([
+        # (r"/stream", StreamHandler, dict(x=x, y=y)),
+        (r"/position", PositionHandler, dict(x=x, y=y))
+    ])
+    application2.listen(8001, address='127.0.0.1')
+    application3 = tornado.web.Application([
+        # (r"/stream", StreamHandler, dict(x=x, y=y)),
+        (r"/position", PositionHandler, dict(x=x, y=y))
+    ])
+    application3.listen(8002, address='127.0.0.1')
+    application4 = tornado.web.Application([
+        # (r"/stream", StreamHandler, dict(x=x, y=y)),
+        (r"/position", PositionHandler, dict(x=x, y=y))
+    ])
+    application4.listen(8003, address='127.0.0.1')
     process.start()
     tornado.ioloop.IOLoop.instance().start()
